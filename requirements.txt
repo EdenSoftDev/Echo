@@ -1,0 +1,6 @@
+pyyaml~=6.0.2
+torch~=2.5.1+cu124
+moviepy~=2.1.1
+pysrt~=1.1.2
+requests~=2.32.3
+tqdm~=4.67.1
