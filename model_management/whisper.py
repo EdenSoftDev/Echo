@@ -1,11 +1,11 @@
 import os
+import requests
+from tqdm import tqdm
 import warnings
 import hashlib
-import requests
 import yaml
-from tqdm import tqdm
 
-model_address = {
+whisper_model_address = {
     "tiny.en": "https://openaipublic.azureedge.net/main/whisper/models/d3dd57d32accea0b295c96e26691aa14d8822fac7d9d27d5dc00b4ca2826dd03/tiny.en.pt",
     "tiny": "https://openaipublic.azureedge.net/main/whisper/models/65147644a518d12f04e32d6f3b26facc3f8dd46e5390956a9424a650c0ce22b9/tiny.pt",
     "base.en": "https://openaipublic.azureedge.net/main/whisper/models/25a8566e1d0c1e2231d1c762132cd20e0f96a85d16145c3a00adf5d1ac670ead/base.en.pt",
@@ -22,36 +22,10 @@ model_address = {
     "turbo": "https://openaipublic.azureedge.net/main/whisper/models/aff26ae408abcba5fbf8813c21e62b0941638c5f6eebfb145be0c9839262a19a/large-v3-turbo.pt",
 }
 
-settings = yaml.load(open("./conf/config.yaml", "r"), Loader=yaml.FullLoader)
+model_settings = yaml.load(open("./conf/model_config.yaml", "r"), Loader=yaml.FullLoader)
 
 
-def check_sha256(sha256: str, file_path: str):
-    return hashlib.sha256(open(file_path, "rb").read()).hexdigest() == sha256
-
-
-def download_model(model_name: str, force_download: bool = False, self_model: bool = False):
-    if model_name not in model_address:
-        raise ValueError(f"Model {model_name} not found.")
-
-    os.makedirs(settings["default_model_path"], exist_ok=True)
-
-    local_download_model_path = os.path.join(settings["default_model_path"], model_name + ".pt")
-    url = model_address[model_name]
-
-    if os.path.exists(local_download_model_path):
-        if force_download:
-            print(f"Model detected, but force downloading model {model_name} to {local_download_model_path}")
-            os.remove(local_download_model_path)
-        else:
-            if check_sha256(url.split("/")[-2], local_download_model_path):
-                print(f"Model {model_name} already exists.")
-                return
-            else:
-                print(f"Model {model_name} already exists, but SHA256 checksum does not match. Redownloading to {local_download_model_path}")
-                os.remove(local_download_model_path)
-    else:
-        print(f"No model named {model_name}. Downloading to {local_download_model_path}")
-
+def download_model_from_url(model_name: str, url: str, local_download_model_path: str, retry: bool = False) -> None:
     response = requests.get(url, stream=True)
 
     if response.status_code != 200:
@@ -77,14 +51,53 @@ def download_model(model_name: str, force_download: bool = False, self_model: bo
                         pbar.update(remaining)
                 pbar.close()
     except Exception as e:
-        raise ValueError(f"Failed to download model {model_name} from {url} \n with error {e}")
+        if retry:
+            raise ValueError(f"Failed to download model {model_name} from {url} with error {e}")
+
+        warnings.warn(f"Failed to download model {model_name} from {url} with error {e}."
+                      f"Retrying download.")
+        os.remove(local_download_model_path)
+        download_model_from_url(model_name, url, local_download_model_path, retry=True)
+
+
+def check_sha256(sha256: str, file_path: str):
+    return hashlib.sha256(open(file_path, "rb").read()).hexdigest() == sha256
+
+
+def whisper_download(model_name: str, force_download: bool = False, retry: bool = False) -> None:
+    os.makedirs(os.path.join(model_settings["default_model_path"], "whisper"), exist_ok=True)
+    local_download_model_path = os.path.join(model_settings["default_model_path"], "whisper", model_name + ".pt")
+    url = whisper_model_address[model_name]
+
+    if os.path.exists(local_download_model_path):
+        if force_download:
+            print(f"Model detected, but force downloading model {model_name} to {local_download_model_path}")
+            os.remove(local_download_model_path)
+        else:
+            if check_sha256(url.split("/")[-2], local_download_model_path):
+                print(f"Model {model_name} already exists.")
+                return
+            else:
+                print(f"Model {model_name} already exists, but SHA256 checksum does not match. "
+                      f"Re downloading to {local_download_model_path}")
+                os.remove(local_download_model_path)
+    else:
+        print(f"No model named {model_name}. Downloading to {local_download_model_path}")
+
+    download_model_from_url(model_name, url, local_download_model_path)
 
     if not check_sha256(url.split("/")[-2], local_download_model_path):
-        warnings.warn(f"Downloaded model {model_name} SHA256 checksum does not match the expected value. Retrying download.")
-        download_model(model_name, force_download=True)
+        if retry:
+            raise ValueError(f"Downloaded model {model_name} SHA256 checksum still does not match the expected value. "
+                             f"Exiting.")
+
+        warnings.warn(f"Downloaded model {model_name} SHA256 checksum does not match the expected value. "
+                      f"Retrying download.")
+        os.remove(local_download_model_path)
+        whisper_download(model_name, force_download=True, retry=True)
 
     print(f"Model {model_name} successfully downloaded to {local_download_model_path}")
 
 
 if __name__ == "__main__":
-    download_model("turbo", force_download=True)
+    whisper_download("turbo", force_download=True)

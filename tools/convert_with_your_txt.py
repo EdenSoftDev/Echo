@@ -9,8 +9,9 @@ def do_replacement(checked_txt, tgt_txt):
     and saves the original tgt_txt as tgt_txt_old.txt.
 
     Pay attention:
-    The count of the lines in checked_txt must smaller than or equal to the count of the lines in tgt_txt,
-    otherwise, the script can't how to strip the timestamps.
+    The count of the lines in checked_txt must equal to the count of the lines in tgt_txt,
+    otherwise, the script can't know how to strip or merge the timestamps.
+
 
     checked_txt may contain the following:
     The words before check.
@@ -35,8 +36,8 @@ def do_replacement(checked_txt, tgt_txt):
     checked_lines = checked_txt.split('\n')
     tgt_lines = tgt_txt.split('\n')
 
-    assert len(checked_lines) <= len(tgt_lines), \
-        'The count of the lines in checked_txt must smaller than or equal to the count of the lines in tgt_txt.'
+    assert len(checked_lines) == len(tgt_lines), \
+        'The count of the lines in checked_txt must equal to the count of the lines in tgt_txt.'
 
     with open(tgt_txt.replace('.txt', '_old.txt'), 'w') as f:
         f.write(tgt_txt)

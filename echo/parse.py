@@ -6,7 +6,7 @@ import torch
 from whisper import load_model
 from moviepy.video.io.VideoFileClip import VideoFileClip
 
-settings = yaml.load(open("./conf/config.yaml", "r"), Loader=yaml.FullLoader)
+settings = yaml.load(open("./conf/model_config.yaml", "r"), Loader=yaml.FullLoader)
 
 
 def write_captions(video_path: str, sentenses: dict) -> None:
@@ -18,19 +18,18 @@ def write_captions(video_path: str, sentenses: dict) -> None:
 
 
 def get_audio(video_path: str) -> str:
-    audio_path = video_path.replace(".mp4", ".wav")
-    if not os.path.exists(audio_path):
+    _audio_path = video_path.replace(".mp4", ".wav")
+    if not os.path.exists(_audio_path):
         video = VideoFileClip(video_path)
-        video.audio.write_audiofile(audio_path)
-    return audio_path
+        video.audio.write_audiofile(_audio_path)
+    return _audio_path
 
 
-def do_transcribe(model, audio_path, language) -> dict:
-    output = model.transcribe(audio_path, word_timestamps=True, language=language)
-    return output
+def do_whisper_transcribe(model, audio_path, language) -> dict:
+    return model.transcribe(audio_path, word_timestamps=True, language=language)
 
 
-def parse_captions(video_path: str, model_name: str, language: str) -> str:
+def parse_captions_with_whisper(video_path: str, model_info: dict, language: str) -> dict:
     model = load_model(os.path.join(settings["default_model_path"], model_name + ".pt"))
 
     if torch.cuda.is_available():
@@ -42,7 +41,7 @@ def parse_captions(video_path: str, model_name: str, language: str) -> str:
     audio_path = get_audio(video_path)
 
     print(f"Transcribing {video_path} with {model_name} model")
-    output = do_transcribe(model, audio_path, language)
+    output = do_whisper_transcribe(model, audio_path, language)
     print(f"Transcription complete with {len(output['segments'])} segments")
 
     sentences = {}
@@ -55,11 +54,24 @@ def parse_captions(video_path: str, model_name: str, language: str) -> str:
     return sentences
 
 
+def parse_captions_with_huggingface(video_path: str, model_info: dict, language: str) -> dict:
+    assert model_info["filename"] is not None, "Filename is required for huggingface model"
+
+
+def parse_captions(video_path: str, model_info: dict, language: str) -> dict:
+    assert video_path is not None, "Video path is required"
+
+    if model_info["model_type"] == "whisper":
+        return parse_captions_with_whisper(video_path, model_info, language)
+    elif model_info["model_type"] == "huggingface":
+        return parse_captions_with_huggingface(video_path, model_info, language)
+
+
 if __name__ == "__main__":
     model_name = "turbo"
     model = load_model(os.path.join(settings["default_model_path"], model_name + ".pt"))
     video_path = "./example.mp4"
     language = "Chinese"
     audio_path = get_audio(video_path)
-    text = do_transcribe(model, audio_path, language)
+    text = do_whisper_transcribe(model, audio_path, language)
     print(text)
