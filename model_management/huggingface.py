@@ -17,6 +17,7 @@ def huggingface_download_file(repo: str, filename: str, args: argparse.Namespace
             use_auth_token=args.token,
             local_dir=os.path.join(model_settings["default_model_path"], "huggingface", repo)
         )
+        print(f"Downloaded {filename} from {repo}")
     except Exception as e:
         if retry:
             raise ValueError(f"Failed to download {filename} with error {e}")
@@ -33,6 +34,7 @@ def huggingface_download_repo(repo: str, args: argparse.Namespace, retry: bool =
             force_download=args.force_download,
             local_dir=os.path.join(model_settings["default_model_path"], "huggingface", repo)
         )
+        print(f"Downloaded {repo}")
     except Exception as e:
         if retry:
             raise ValueError(f"Failed to download {repo} with error {e}")

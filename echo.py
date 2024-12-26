@@ -25,11 +25,9 @@ def attempt_download_model(model_name: str, force_download: bool = False, args: 
         }
     else:
         huggingface_download(model_name, args)
-
         model_info = {
             "model_name": model_name,
-            "model_path": os.path.join(model_settings["default_model_path"], model_name),
-            "filename": args.filename,
+            "model_path": os.path.join(model_settings["default_model_path"], "huggingface", model_name),
             "model_type": "huggingface"
         }
 
