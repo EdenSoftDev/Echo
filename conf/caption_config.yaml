@@ -1,0 +1,8 @@
+font: "./fonts/江城圆体.ttf"
+y_position: 200
+font_size: 16
+fade_in: 0.1
+fade_out: 0.1
+color: "white"
+stroke_color: "black"
+stroke_width: 2

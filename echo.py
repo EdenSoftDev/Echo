@@ -6,8 +6,8 @@ import yaml
 
 from model_management.whisper import whisper_download, whisper_model_address
 from model_management.huggingface import huggingface_download
-from echo.parse import parse_captions
-from echo.write import write_captions
+from echo.CaptionParser import CaptionParser
+from echo.CaptionWriter import CaptionWriter
 
 model_settings = yaml.load(open("./conf/model_config.yaml", "r"), Loader=yaml.FullLoader)
 
@@ -46,12 +46,15 @@ def main():
     parser.add_argument("-language", type=str, default="Chinese")
 
     args = parser.parse_args()
-    model_info = attempt_download_model(args.model_name, args.force_download, args)
 
     if args.mode == "parse":
-        parse_captions(args.video_path, model_info, args.language)
+        model_info = attempt_download_model(args.model_name, args.force_download, args)
+        caption_parser = CaptionParser(args.video_path, model_info["model_name"], model_info["model_path"],
+                                       model_info["model_type"], args.language)
+        caption_parser.parse_captions_with_whisper()
     elif args.mode == "write":
-        write_captions(args.video_path)
+        caption_writer = CaptionWriter(args.video_path)
+        caption_writer.write_captions(args.video_path)
 
 
 if __name__ == "__main__":

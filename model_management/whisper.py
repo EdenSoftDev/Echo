@@ -22,7 +22,7 @@ whisper_model_address = {
     "turbo": "https://openaipublic.azureedge.net/main/whisper/models/aff26ae408abcba5fbf8813c21e62b0941638c5f6eebfb145be0c9839262a19a/large-v3-turbo.pt",
 }
 
-model_settings = yaml.load(open("./conf/model_config.yaml", "r"), Loader=yaml.FullLoader)
+model_config = yaml.load(open("./conf/model_config.yaml", "r"), Loader=yaml.FullLoader)
 
 
 def download_model_from_url(model_name: str, url: str, local_download_model_path: str, retry: bool = False) -> None:
@@ -65,8 +65,8 @@ def check_sha256(sha256: str, file_path: str):
 
 
 def whisper_download(model_name: str, force_download: bool = False, retry: bool = False) -> None:
-    os.makedirs(os.path.join(model_settings["default_model_path"], "whisper"), exist_ok=True)
-    local_download_model_path = os.path.join(model_settings["default_model_path"], "whisper", model_name + ".pt")
+    os.makedirs(os.path.join(model_config["default_model_path"], "whisper"), exist_ok=True)
+    local_download_model_path = os.path.join(model_config["default_model_path"], "whisper", model_name + ".pt")
     url = whisper_model_address[model_name]
 
     if os.path.exists(local_download_model_path):
