@@ -22,8 +22,12 @@ whisper_model_address = {
     "turbo": "https://openaipublic.azureedge.net/main/whisper/models/aff26ae408abcba5fbf8813c21e62b0941638c5f6eebfb145be0c9839262a19a/large-v3-turbo.pt",
 }
 
-model_config = yaml.load(open("./conf/model_config.yaml", "r"), Loader=yaml.FullLoader)
-
+model_config = yaml.load(
+    open("./conf/model_config.yaml"
+         if not __name__ == "__main__" else
+         "../conf/model_config.yaml", "r"),
+    Loader=yaml.FullLoader
+)
 
 def download_model_from_url(model_name: str, url: str, local_download_model_path: str, retry: bool = False) -> None:
     response = requests.get(url, stream=True)

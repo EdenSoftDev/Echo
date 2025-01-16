@@ -5,7 +5,12 @@ import warnings
 
 from huggingface_hub import snapshot_download, hf_hub_download
 
-model_config = yaml.load(open("./conf/model_config.yaml", "r"), Loader=yaml.FullLoader)
+model_config = yaml.load(
+    open("./conf/model_config.yaml"
+         if not __name__ == "__main__" else
+         "../conf/model_config.yaml", "r"),
+    Loader=yaml.FullLoader
+)
 
 
 def huggingface_download_file(repo: str, filename: str, args: argparse.Namespace, retry: bool = False) -> None:
